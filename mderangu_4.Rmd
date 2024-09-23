@@ -1,0 +1,86 @@
+---
+title: "Mderangu LP-4"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+date: "2024-09-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+##Lets start by installing the lpSolve package.
+##install.packages("lpSolve")
+
+library(lpSolve)
+
+# Define the objective function coefficients
+# Order: S1, S2, S3, M1, M2, M3, L1, L2, L3
+f.obj <- c(300, 300, 300, 360, 360, 360, 420, 420, 420)
+
+# Define the constraint matrix
+#In total, this sums up to 12 constraints:
+
+# 3 production capacity constraints
+# 3 storage space constraints
+# 3 sales forecast constraints
+# 3 utilization constraints
+
+f.con <- matrix(c(
+  # Production capacity constraints: Each plant has a maximum production capacity for the three products.
+  1, 0, 0, 1, 0, 0, 1, 0, 0,  # Plant 1
+  0, 1, 0, 0, 1, 0, 0, 1, 0,  # Plant 2
+  0, 0, 1, 0, 0, 1, 0, 0, 1,  # Plant 3
+  
+  # Storage space constraints: Each plant has constraints on storage space for the products.
+  12, 0, 0, 15, 0, 0, 20, 0, 0,  # Plant 1
+  0, 12, 0, 0, 15, 0, 0, 20, 0,  # Plant 2
+  0, 0, 12, 0, 0, 15, 0, 0, 20,  # Plant 3
+  
+  # Sales forecast constraints: Limits are placed based on projected sales for each product category.
+  1, 1, 1, 0, 0, 0, 0, 0, 0,  # Large
+  0, 0, 0, 1, 1, 1, 0, 0, 0,  # Medium
+  0, 0, 0, 0, 0, 0, 1, 1, 1,  # Small
+  
+  # Percentage utilization constraints (p is the same for all plants)
+  900, -750, 0, 900, -750, 0, 900, -750, 0,  # Plant 1 utilization
+  0, 450, -900, 0, 450, -900, 0, 450, -900,  # Plant 2 utilization
+  -450, 0, 750, -450, 0, 750, -450, 0, 750   # Plant 3 utilization
+), ncol = 9, byrow = TRUE)
+
+# Define the direction of the inequalities
+f.dir <- c('<=', '<=', '<=', '<=', '<=', '<=', '<=', '<=', '<=',
+                '=', '=', '=')
+
+# Define the right-hand side of the constraints
+f.rhs <- c(
+  750,    # Plant 1 production capacity
+  900,    # Plant 2 production capacity
+  450,    # Plant 3 production capacity
+  13000,  # Plant 1 storage space
+  12000,  # Plant 2 storage space
+  5000,   # Plant 3 storage space
+  750,    # Sales limit for large size
+  1200,   # Sales limit for medium size
+  900,    # Sales limit for small size
+  0,    # Percentage utilization for Plant 1 (dummy for p)
+  0,    # Percentage utilization for Plant 2 (dummy for p)
+  0     # Percentage utilization for Plant 3 (dummy for p)
+)
+
+lp("max", f.obj, f.con, f.dir, f.rhs)
+
+# Solve the linear programming problem
+result <- lp("max", f.obj, f.con, f.dir, f.rhs)
+
+# Access the solution
+solution <- result$solution
+print(solution)
+
+
+```
+
